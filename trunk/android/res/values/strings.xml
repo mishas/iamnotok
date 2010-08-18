@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="hello">Hello World, EmergencyInfoActivity!</string>
+    <string name="app_name">I\'m Not OK</string>
+    <string name="view_and_edit_emergency_info">View and edit emergency info</string>
+    <string name="change_application_settings">Change application settings</string>
+</resources>
