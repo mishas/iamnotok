@@ -37,5 +37,13 @@ public class MainActivity extends Activity {
 				MainActivity.this.startActivity(intent);
 			}
 		});
+        
+        // Check if PatternTrackingService is running (this could happen if
+        // the application is just installed), if not, start it
+        if (!PatternTrackingService.mServiceRunning) {
+          Intent patternTrackingServiceIntent =
+            new Intent(this, PatternTrackingService.class);
+          this.startService(patternTrackingServiceIntent);
+        }
     }
 }
