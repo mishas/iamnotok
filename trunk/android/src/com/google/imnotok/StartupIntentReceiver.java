@@ -19,5 +19,4 @@ public class StartupIntentReceiver extends BroadcastReceiver {
       new Intent(context, PatternTrackingService.class);
     context.startService(patternTrackingServiceIntent);
   }
-
 }

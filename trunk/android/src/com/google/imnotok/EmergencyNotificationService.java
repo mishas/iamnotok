@@ -13,7 +13,7 @@ import android.util.Log;
  */
 public class EmergencyNotificationService extends Service {
   private static String mLogTag = "ImNotOk - EmergencyNotificationService";  
-  
+
   @Override
   public IBinder onBind(Intent intent) {
     return null;
@@ -21,7 +21,7 @@ public class EmergencyNotificationService extends Service {
 
   @Override
   public void onStart(Intent intent, int startId) {
-    Log.d(mLogTag, "Starting the service");    
+    Log.d(mLogTag, "Starting the service");
     super.onStart(intent, startId);
   }
 }

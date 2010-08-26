@@ -4,9 +4,13 @@ import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.os.IBinder;
 import android.util.Log;
+import android.widget.Toast;
 
 /**
  * Tracks the events in the system and infers when emergency has happened. When
@@ -30,6 +34,7 @@ public class PatternTrackingService extends Service {
       this.stopSelf();
     } else {
       mServiceRunning = true;
+      Log.d(mLogTag, "The service started successfully");
     }
   }
 
@@ -40,27 +45,15 @@ public class PatternTrackingService extends Service {
   }
 
   private boolean startTrackingPatterns() {
-    Thread trackerThread = new Thread(new Runnable() {
-      @Override
-      public void run() {
-        try {
-          // Sleep for some time, then invoke the emergency service - just for
-          // testing purposes..
-          Thread.sleep(50000);
-
-          Intent emergencyIntent =
-              new Intent(PatternTrackingService.this, EmergencyNotificationService.class);
-          PatternTrackingService.this.startService(emergencyIntent);          
-        } catch (InterruptedException e) {
-          e.printStackTrace();
-        }
-
-      }
-    });
-    trackerThread.start();
+    BroadcastReceiver receiver = new MediaButtonEventReceiver();
+    IntentFilter intentFilter = new IntentFilter();
+    intentFilter.addAction(Intent.ACTION_MEDIA_BUTTON);
+    intentFilter.addAction(Intent.ACTION_CALL_BUTTON);
+    intentFilter.addAction(Intent.ACTION_CAMERA_BUTTON);
+    this.registerReceiver(receiver, intentFilter);
     return true;
   }
-
+  
   private void informUserAboutProblemTrackingPatterns() {
     // Show a notification to the user that we were unable to start the pattern
     // tracker.
@@ -81,5 +74,34 @@ public class PatternTrackingService extends Service {
         this.getString(R.string.unable_to_track_actions_for_emergency_msg), pendingIntent);
 
     notificationManager.notify(0, notification);
+  }
+  
+  private void mediaButtonClicked() {
+    Log.d(mLogTag, "Media button has been clicked");
+    Toast.makeText(this, "Media button clicked", 5000).show();
+  }
+  
+  private void callButtonClicked() {
+    Log.d(mLogTag, "Call button clicked");
+    Toast.makeText(this, "Call button clicked", 5000).show();
+  }
+  
+  private void cameraButtonClicked() {
+    Log.d(mLogTag, "Camera button clicked");
+    Toast.makeText(this, "Camera button clicked", 5000).show();
+  }
+  
+  private class MediaButtonEventReceiver extends BroadcastReceiver {
+    @Override
+    public void onReceive(Context context, Intent intent) {
+      Log.d(mLogTag, "Received intent");
+      if (intent.getAction() == Intent.ACTION_CALL_BUTTON) {
+        PatternTrackingService.this.callButtonClicked();
+      } else if (intent.getAction() == Intent.ACTION_CAMERA_BUTTON) {
+        PatternTrackingService.this.cameraButtonClicked();
+      } else if (intent.getAction() == Intent.ACTION_MEDIA_BUTTON) {
+        PatternTrackingService.this.mediaButtonClicked();
+      }
+    }    
   }
 }
