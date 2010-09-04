@@ -47,9 +47,7 @@ public class PatternTrackingService extends Service {
   private boolean startTrackingPatterns() {
     BroadcastReceiver receiver = new MediaButtonEventReceiver();
     IntentFilter intentFilter = new IntentFilter();
-    intentFilter.addAction(Intent.ACTION_MEDIA_BUTTON);
     intentFilter.addAction(Intent.ACTION_CALL_BUTTON);
-    intentFilter.addAction(Intent.ACTION_CAMERA_BUTTON);
     this.registerReceiver(receiver, intentFilter);
     return true;
   }
@@ -95,6 +93,7 @@ public class PatternTrackingService extends Service {
     @Override
     public void onReceive(Context context, Intent intent) {
       Log.d(mLogTag, "Received intent");
+      
       if (intent.getAction() == Intent.ACTION_CALL_BUTTON) {
         PatternTrackingService.this.callButtonClicked();
       } else if (intent.getAction() == Intent.ACTION_CAMERA_BUTTON) {

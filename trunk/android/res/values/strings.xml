@@ -7,5 +7,8 @@
     <string name="unable_to_track_actions_for_emergency_title">I\'m Not Ok - unable to start the pattern tracker</string>
     <string name="unable_to_track_actions_for_emergency_msg">Click here to retry.</string>
     <string name="cancel">Cancel</string>
-    <string name="retry">Retry</string>   
+    <string name="retry">Retry</string>
+    <string name="SOS">SOS</string>
+    <string name="emergency_response_starting">Starting emergency response</string>
+    <string name="click_to_disable">Click to disable</string>
 </resources>
