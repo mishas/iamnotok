@@ -38,6 +38,16 @@ public class MainActivity extends Activity {
 			}
 		});
         
+        Button IAmNotOKStartButton = (Button) this.findViewById(R.id.IAmNotOKStartButton);
+        IAmNotOKStartButton.setOnClickListener(new OnClickListener() {          
+            @Override
+            public void onClick(View v) {
+                // Send of an intent to start off the EmergencyInfoActivity
+                Intent intent = new Intent(MainActivity.this, EmergencyNotificationService.class);
+                MainActivity.this.startService(intent);
+            }
+        });
+        
         // Check if PatternTrackingService is running (this could happen if
         // the application is just installed), if not, start it
         if (!PatternTrackingService.mServiceRunning) {

@@ -5,4 +5,5 @@
 
 	<Button android:text="@string/view_and_edit_emergency_info" android:id="@+id/EmergencyInfoButton" android:layout_width="wrap_content" android:layout_height="wrap_content"></Button>
 	<Button android:text="@string/change_application_settings" android:id="@+id/ApplicationSettingsButton" android:layout_width="wrap_content" android:layout_height="wrap_content"></Button>
+  <Button android:text="@string/i_am_not_ok_start" android:id="@+id/IAmNotOKStartButton" android:layout_width="wrap_content" android:layout_height="wrap_content"></Button>
 </LinearLayout>
