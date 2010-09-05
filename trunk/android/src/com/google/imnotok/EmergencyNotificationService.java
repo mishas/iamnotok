@@ -9,6 +9,10 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.location.Location;
+import android.location.LocationListener;
+import android.location.LocationManager;
+import android.os.Bundle;
 import android.os.IBinder;
 import android.telephony.gsm.SmsManager;
 import android.util.Log;
@@ -37,6 +41,7 @@ public class EmergencyNotificationService extends Service {
 
   private boolean mEmergencyResponseShouldBeDisabled = false;
   private boolean mServiceRunning = false;
+  private Location mLocation;
 
   @Override
   public IBinder onBind(Intent intent) {
@@ -59,6 +64,11 @@ public class EmergencyNotificationService extends Service {
       mServiceRunning = true;
       boolean showNotification =
           intent.getBooleanExtra(SHOW_NOTIFICATION_WITH_DISABLE, false);
+      
+      // Start location tracker from here since it takes some time to get
+      // the first GPS fix.
+      this.startLocationTracker();
+      
       if (showNotification) {
         this.showDisableNotificationAndWaitToInvokeResponse();
       } else {
@@ -72,76 +82,83 @@ public class EmergencyNotificationService extends Service {
   
   //---sends an SMS message to another device---
   private void sendTextMessage() {
-    
-//    String[] contacts = getContactNumber();
+	Thread messageSender = new Thread(new Runnable() {
+  	  @Override
+	  public void run() {
+  		// String[] contacts = getContactNumber();
 
-//    String phoneNumber = contacts[0];
-//    String message = contacts[1];
-     
-    
-    String phoneNumber = "5556";
-    //---TODO: Include the GPS location in the message.
-    String message = "I am not OK!";
-    
-    String SENT = "SMS_SENT";
-    String DELIVERED = "SMS_DELIVERED";
- 
-    PendingIntent sentPI = PendingIntent.getBroadcast(this, 0,
-        new Intent(SENT), 0);
-    PendingIntent deliveredPI = PendingIntent.getBroadcast(this, 0,
-        new Intent(DELIVERED), 0);
- 
-        //---when the SMS has been sent---
-    registerReceiver(new BroadcastReceiver(){
-        @Override
-        public void onReceive(Context arg0, Intent arg1) {
-            switch (getResultCode())
-            {
-                case Activity.RESULT_OK:
-                    Toast.makeText(getBaseContext(), "SMS sent", 
-                            Toast.LENGTH_SHORT).show();
-                    break;
-                case SmsManager.RESULT_ERROR_GENERIC_FAILURE:
-                    Toast.makeText(getBaseContext(), "Generic failure", 
-                            Toast.LENGTH_SHORT).show();
-                    break;
-                case SmsManager.RESULT_ERROR_NO_SERVICE:
-                    Toast.makeText(getBaseContext(), "No service", 
-                            Toast.LENGTH_SHORT).show();
-                    break;
-                case SmsManager.RESULT_ERROR_NULL_PDU:
-                    Toast.makeText(getBaseContext(), "Null PDU", 
-                            Toast.LENGTH_SHORT).show();
-                    break;
-                case SmsManager.RESULT_ERROR_RADIO_OFF:
-                    Toast.makeText(getBaseContext(), "Radio off", 
-                                Toast.LENGTH_SHORT).show();
-                        break;
-                }
-            }
-        }, new IntentFilter(SENT));
- 
-        //---when the SMS has been delivered---
-    registerReceiver(new BroadcastReceiver(){
-        @Override
-        public void onReceive(Context arg0, Intent arg1) {
-            switch (getResultCode())
-            {
-                case Activity.RESULT_OK:
-                    Toast.makeText(getBaseContext(), "SMS delivered", 
-                            Toast.LENGTH_SHORT).show();
-                    break;
-                case Activity.RESULT_CANCELED:
-                    Toast.makeText(getBaseContext(), "SMS not delivered", 
-                                Toast.LENGTH_SHORT).show();
-                        break;                        
-                }
-            }
-        }, new IntentFilter(DELIVERED));        
- 
-        SmsManager sms = SmsManager.getDefault();
-        sms.sendTextMessage(phoneNumber, null, message, sentPI, deliveredPI);        
-    } 
+  		// String phoneNumber = contacts[0];
+  		// String message = contacts[1];
+  	    
+  	    String phoneNumber = "5556";
+  	    //---TODO: Include the GPS location in the message.
+  	    Location loc = getLocation();
+  	    Log.d(mLogTag, "Sending the location: latitude: " + loc.getLatitude() + ", longitude: " + loc.getLongitude());
+  	    String message = "I am not OK!";
+  	    
+  	    String SENT = "SMS_SENT";
+  	    String DELIVERED = "SMS_DELIVERED";
+  	 
+  	    PendingIntent sentPI = PendingIntent.getBroadcast(EmergencyNotificationService.this, 0,
+  	        new Intent(SENT), 0);
+  	    PendingIntent deliveredPI = PendingIntent.getBroadcast(EmergencyNotificationService.this, 0,
+  	        new Intent(DELIVERED), 0);
+  	 
+  	        //---when the SMS has been sent---
+  	    registerReceiver(new BroadcastReceiver(){
+  	        @Override
+  	        public void onReceive(Context arg0, Intent arg1) {
+  	            switch (getResultCode())
+  	            {
+  	                case Activity.RESULT_OK:
+  	                    Toast.makeText(getBaseContext(), "SMS sent", 
+  	                            Toast.LENGTH_SHORT).show();
+  	                    break;
+  	                case SmsManager.RESULT_ERROR_GENERIC_FAILURE:
+  	                    Toast.makeText(getBaseContext(), "Generic failure", 
+  	                            Toast.LENGTH_SHORT).show();
+  	                    break;
+  	                case SmsManager.RESULT_ERROR_NO_SERVICE:
+  	                    Toast.makeText(getBaseContext(), "No service", 
+  	                            Toast.LENGTH_SHORT).show();
+  	                    break;
+  	                case SmsManager.RESULT_ERROR_NULL_PDU:
+  	                    Toast.makeText(getBaseContext(), "Null PDU", 
+  	                            Toast.LENGTH_SHORT).show();
+  	                    break;
+  	                case SmsManager.RESULT_ERROR_RADIO_OFF:
+  	                    Toast.makeText(getBaseContext(), "Radio off", 
+  	                                Toast.LENGTH_SHORT).show();
+  	                        break;
+  	                }
+  	            }
+  	        }, new IntentFilter(SENT));
+  	 
+  	        //---when the SMS has been delivered---
+  	    registerReceiver(new BroadcastReceiver(){
+  	        @Override
+  	        public void onReceive(Context arg0, Intent arg1) {
+  	            switch (getResultCode())
+  	            {
+  	                case Activity.RESULT_OK:
+  	                    Toast.makeText(getBaseContext(), "SMS delivered", 
+  	                            Toast.LENGTH_SHORT).show();
+  	                    break;
+  	                case Activity.RESULT_CANCELED:
+  	                    Toast.makeText(getBaseContext(), "SMS not delivered", 
+  	                                Toast.LENGTH_SHORT).show();
+  	                        break;                        
+  	                }
+  	            }
+  	        }, new IntentFilter(DELIVERED));        
+  	 
+  	        SmsManager sms = SmsManager.getDefault();
+  	        sms.sendTextMessage(phoneNumber, null, message, sentPI, deliveredPI);        
+			
+	  }
+	});
+	messageSender.start();
+  } 
   
 //  private String[] getContactNumber(){ 
 // // Form an array specifying which columns to return. 
@@ -239,5 +256,62 @@ public class EmergencyNotificationService extends Service {
 
   private synchronized boolean getEmergencyFlagValue() {
     return mEmergencyResponseShouldBeDisabled;
+  }
+  
+  private synchronized void setLocation(Location location) {
+	mLocation = location;
+  }
+  
+  /** Should be called from a separate thread since may block waiting for
+   * location.
+   */
+  private synchronized Location getLocation() {
+	// Construct a copy of the current location.
+	while (mLocation == null) {
+	  try {
+		this.wait();
+	  } catch (InterruptedException e) {
+ 	    e.printStackTrace();
+	  }
+	}
+	return new Location(mLocation);
+  }
+  
+  private void startLocationTracker() {
+	// TODO(vytautas): get permission to change settings and make sure we
+	// can turn the GPS on even if the user has disabled it.
+	LocationManager mlocManager =
+	  (LocationManager)getSystemService(Context.LOCATION_SERVICE);
+	LocationListener mlocListener = new UserLocationListener();
+	mlocManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, mlocListener);
+  }
+  
+  private class UserLocationListener implements LocationListener {
+	@Override
+	public void onLocationChanged(Location location) {
+	  if (EmergencyNotificationService.this.mLocation != null) {
+		if (location.getAccuracy() < EmergencyNotificationService.this.mLocation.getAccuracy()) {
+		  EmergencyNotificationService.this.setLocation(location);
+		}
+	  } else {
+		EmergencyNotificationService.this.setLocation(location);
+		synchronized (EmergencyNotificationService.this) {
+		  EmergencyNotificationService.this.notifyAll();
+		}
+	  }
+	}
+
+	@Override
+	public void onProviderDisabled(String provider) {		
+	}
+
+	@Override
+	public void onProviderEnabled(String provider) {
+	}
+
+	@Override
+	public void onStatusChanged(String provider, int status, Bundle extras) {
+	}
+	  
   }
 }
