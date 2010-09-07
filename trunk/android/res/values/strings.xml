@@ -10,7 +10,7 @@
     <string name="cancel">Cancel</string>
     <string name="retry">Retry</string>
     <string name="SOS">SOS</string>
-    <string name="emergency_response_starting">Starting emergency response</string>
+    <string name="emergency_response_starting">Sending SOS messages to your emergency contacts</string>
     <string name="click_to_disable">Click to disable</string>
     <string name="contact_picker">Edit contacts to inform</string>
     <string name="add_contact">Add a contact</string>

@@ -38,9 +38,11 @@ public class EmergencyNotificationService extends Service {
   private final static String STOP_EMERGENCY = "stopEmergency";
   /** Time allowed for user to cancel the emergency response. */
   private final static int waitForMs = 20000;
-
+  
+  private Object mEmergencyResponseLock = new Object();
   private boolean mEmergencyResponseShouldBeDisabled = false;
   private boolean mServiceRunning = false;
+  private int mNotificationID = 0;
   private Location mLocation;
 
   @Override
@@ -57,6 +59,7 @@ public class EmergencyNotificationService extends Service {
     if (stopEmergency) {
       Log.d(mLogTag, "Disabling the response");
       this.setEmergencyFlagValue(false);
+      mServiceRunning = false;
       return;
     }
     if (!mServiceRunning) {
@@ -64,9 +67,11 @@ public class EmergencyNotificationService extends Service {
       mServiceRunning = true;
       boolean showNotification =
           intent.getBooleanExtra(SHOW_NOTIFICATION_WITH_DISABLE, false);
+      this.setEmergencyFlagValue(true);
       
       // Start location tracker from here since it takes some time to get
       // the first GPS fix.
+      mLocation = null;
       this.startLocationTracker();
       
       if (showNotification) {
@@ -211,7 +216,7 @@ public class EmergencyNotificationService extends Service {
     setEmergencyFlagValue(true);
     
     // Show a notification.
-    NotificationManager notificationManager =
+    final NotificationManager notificationManager =
         (NotificationManager) this.getSystemService(NOTIFICATION_SERVICE);
 
     Intent disableEmergencyIntent = new Intent(this, this.getClass());
@@ -228,7 +233,7 @@ public class EmergencyNotificationService extends Service {
         this.getString(R.string.emergency_response_starting),
         this.getString(R.string.click_to_disable), pendingIntent);
     
-    notificationManager.notify(0, notification);
+    notificationManager.notify(mNotificationID, notification);
     
     // Start the waiting in a separate thread since otherwise the service will
     // not be able to receive the intent for cancelling the emergency response.
@@ -240,7 +245,7 @@ public class EmergencyNotificationService extends Service {
         } catch (InterruptedException exception) {
           exception.printStackTrace();
         } finally {
-          // TODO(vytautas): cancel the notification.
+          notificationManager.cancel(mNotificationID++);
           if (EmergencyNotificationService.this.getEmergencyFlagValue()) {
             invokeEmergencyResponse();
           }
@@ -269,7 +274,9 @@ public class EmergencyNotificationService extends Service {
 	// Construct a copy of the current location.
 	while (mLocation == null) {
 	  try {
-		this.wait();
+		synchronized (mEmergencyResponseLock) {
+		  mEmergencyResponseLock.wait();
+		}
 	  } catch (InterruptedException e) {
  	    e.printStackTrace();
 	  }
@@ -289,14 +296,15 @@ public class EmergencyNotificationService extends Service {
   private class UserLocationListener implements LocationListener {
 	@Override
 	public void onLocationChanged(Location location) {
+	  Log.d(mLogTag, "Location has changed");
 	  if (EmergencyNotificationService.this.mLocation != null) {
 		if (location.getAccuracy() < EmergencyNotificationService.this.mLocation.getAccuracy()) {
 		  EmergencyNotificationService.this.setLocation(location);
 		}
 	  } else {
 		EmergencyNotificationService.this.setLocation(location);
-		synchronized (EmergencyNotificationService.this) {
-		  EmergencyNotificationService.this.notifyAll();
+		synchronized (mEmergencyResponseLock) {
+		  mEmergencyResponseLock.notifyAll();
 		}
 	  }
 	}
