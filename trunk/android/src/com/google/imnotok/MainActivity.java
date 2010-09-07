@@ -37,6 +37,16 @@ public class MainActivity extends Activity {
 				MainActivity.this.startActivity(intent);
 			}
 		});
+   
+        Button contactPickerButton = (Button) this.findViewById(R.id.ContactPickerButton);
+        contactPickerButton.setOnClickListener(new OnClickListener() {          
+            @Override
+            public void onClick(View v) {
+                // Send of an intent to start off the ContactPickerActivity
+                Intent intent = new Intent(MainActivity.this, ContactPickerActivity.class);
+                MainActivity.this.startActivity(intent);
+            }
+        });
         
         Button IAmNotOKStartButton = (Button) this.findViewById(R.id.IAmNotOKStartButton);
         IAmNotOKStartButton.setOnClickListener(new OnClickListener() {          
