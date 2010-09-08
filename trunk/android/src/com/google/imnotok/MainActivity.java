@@ -43,7 +43,7 @@ public class MainActivity extends Activity {
             @Override
             public void onClick(View v) {
                 // Send of an intent to start off the ContactPickerActivity
-                Intent intent = new Intent(MainActivity.this, ContactPickerActivity.class);
+                Intent intent = new Intent(MainActivity.this, EmergencyContactsActivity.class);
                 MainActivity.this.startActivity(intent);
             }
         });

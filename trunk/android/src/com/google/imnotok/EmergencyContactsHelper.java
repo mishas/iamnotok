@@ -1,0 +1,159 @@
+package com.google.imnotok;
+
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.TreeSet;
+
+import android.app.Activity;
+import android.content.ContentResolver;
+import android.content.SharedPreferences;
+import android.database.Cursor;
+import android.provider.ContactsContract;
+import android.util.Log;
+
+/**
+ * Maintains a list of contact ids. Quite crude but should do the job for now.
+ * 
+ * @author Ahmed Abdelkader (ahmadabdolkader@gmail.com)
+ */
+public class EmergencyContactsHelper {
+	private static final String PREFS_NAME = "MyPrefsFile";
+	private static final String CONTACT_IDS_PROPERTY_NAME = "contact_ids";
+
+	private Activity activity;
+	private TreeSet<String> contactIds;
+	private HashMap<String, Contact> contacts;
+	
+	public EmergencyContactsHelper(Activity context) {
+		this.activity = context;
+		// ResetContacts();
+		contactIds();
+	}
+	
+	public void ResetContacts() {
+		SharedPreferences settings =  activity.getSharedPreferences(PREFS_NAME, 0);
+		SharedPreferences.Editor editor = settings.edit();
+		editor.putString(CONTACT_IDS_PROPERTY_NAME, "");
+		editor.commit();
+	}
+
+	public Collection<String> contactIds() {
+		if (contactIds != null) return contactIds;
+		contactIds = new TreeSet<String>();
+		contacts = new HashMap<String, EmergencyContactsHelper.Contact>();
+		SharedPreferences settings =  activity.getSharedPreferences(PREFS_NAME, 0);
+		String list = settings.getString(CONTACT_IDS_PROPERTY_NAME, "");
+		for (String contactId : list.split(",")) {
+			Contact contact = new Contact(contactId);
+			if (!contact.lookup()) continue;
+			contactIds.add(contactId);
+			contacts.put(contactId, contact);
+		}
+		return contactIds();
+	}
+	
+	public Contact getContactWithId(String contactId) {
+		return contacts.get(contactId);
+	}
+	
+	public Contact getContactWithName(String contactName) {
+		for (Contact contact : contacts.values())
+			if (contact.getName().equals(contactName))
+				return contact;
+		return null;
+	}
+	
+	public boolean addContact(String contactId) {
+		if (hasContact(contactId)) return false;
+		Contact contact = new Contact(contactId);
+		if (!contact.lookup()) {
+			Log.e("ContactsHelper", "Lookup failed for: " + contactId);
+			return false;
+		}
+		contactIds.add(contactId);
+		contacts.put(contactId, contact);
+		SharedPreferences settings =  activity.getSharedPreferences(PREFS_NAME, 0);
+		SharedPreferences.Editor editor = settings.edit();
+		String list = settings.getString(CONTACT_IDS_PROPERTY_NAME, "");
+		Log.d("ContactsHelper", "list = " + list);
+		list += contactId + ",";
+		editor.putString(CONTACT_IDS_PROPERTY_NAME, list);
+		if (!editor.commit()) {
+			Log.e("ContactsHelper", "Commit failed for: " + contactId);
+			return false;
+		}
+		return true;
+	}
+	
+	public boolean deleteContact(String contactId) {
+		if (!hasContact(contactId)) return false;
+		contactIds.remove(contactId);
+		SharedPreferences settings =  activity.getSharedPreferences(PREFS_NAME, 0);
+		SharedPreferences.Editor editor = settings.edit();
+		String list = "";
+		for (String oldContactId : contactIds)
+			list += oldContactId + ",";
+		editor.putString(CONTACT_IDS_PROPERTY_NAME, list);
+		return editor.commit();
+	}
+	
+	public boolean hasContact(String contactId) {
+		return contactIds.contains(contactId);
+	}
+	
+	public class Contact {
+		private String id;
+		private String name;
+		private String phone;
+		
+		public Contact(String id) {
+			this.id = id;
+		}
+		
+		public boolean lookup() {
+			try {
+				ContentResolver cr = activity.getContentResolver();
+				Cursor cur = cr.query(ContactsContract.Contacts.CONTENT_URI,
+									  null, ContactsContract.Contacts._ID + " = ?",
+									  new String[]{id}, null);
+				if (cur.moveToFirst()) {
+					this.name = cur.getString(cur.getColumnIndex(ContactsContract.Contacts.DISPLAY_NAME));
+					if (cur.getInt(cur.getColumnIndex(ContactsContract.Contacts.HAS_PHONE_NUMBER)) > 0) {
+						Cursor pCur = cr.query(ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
+										       null, ContactsContract.CommonDataKinds.Phone.CONTACT_ID + " = ?",
+										       new String[]{id}, null);
+						if (pCur.moveToNext()) {
+							this.phone = pCur.getString(pCur.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER));
+						} else {
+							Log.w("ContactsHelper", "pCur.moveTONext failed");
+						}
+					}
+					Log.d("ContactsHelper", toString());
+					return true;
+				} else {
+					Log.w("ContactsHelper", "cur.moveToFirst() is false");
+					return false;
+				}
+			} catch(Exception e) {
+				Log.e("ContactsHelper", e.toString());
+				return false;
+			}
+		}
+
+		public String getId() {
+			return id;
+		}
+
+		public String getName() {
+			return name;
+		}
+
+		public String getPhones() {
+			return phone;
+		}
+		
+		public String toString() {
+			return id + ": " + name + " (" + phone + ")";
+		}
+	}
+}
