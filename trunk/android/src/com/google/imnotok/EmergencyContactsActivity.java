@@ -84,6 +84,11 @@ public class EmergencyContactsActivity extends ListActivity {
 			Intent contactPickerIntent = new Intent(Intent.ACTION_PICK,
 					android.provider.ContactsContract.Contacts.CONTENT_URI);
 			startActivityForResult(contactPickerIntent, CONTACT_PICKER_RESULT);
+		} else if (item.getItemId() == R.id.preferences) {
+          // Send of an intent to start off the ApplicationSettingsActivity
+          Intent intent = new Intent(EmergencyContactsActivity.this,
+              ApplicationSettingsActivity.class);
+          EmergencyContactsActivity.this.startActivity(intent);
 		}
 		return super.onMenuItemSelected(featureId, item);
 	}

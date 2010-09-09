@@ -85,16 +85,14 @@ public class EmergencyNotificationService extends Service {
     }
   }
   
-  //---sends an SMS message to another device---
+  /**
+   * Sends a sms to another device
+   **/
   private void sendTextMessage() {
 	Thread messageSender = new Thread(new Runnable() {
   	  @Override
 	  public void run() {
-  		// String[] contacts = getContactNumber();
-
-  		// String phoneNumber = contacts[0];
-  		// String message = contacts[1];
-  	    
+  	    Log.d(mLogTag, "Sending sms");
   	    String phoneNumber = "5556";
   	    //---TODO: Include the GPS location in the message.
   	    // Location loc = getLocation();
@@ -164,44 +162,6 @@ public class EmergencyNotificationService extends Service {
 	});
 	messageSender.start();
   } 
-  
-//  private String[] getContactNumber(){ 
-// // Form an array specifying which columns to return. 
-//    String[] projection = new String[] {
-//                                People.NAME,
-//                                People.NUMBER
-//                              };
-//
-//    // Get the base URI for the People table in the Contacts content provider.
-//    Uri contacts =  People.CONTENT_URI;
-//
-//    // Make the query.
-//    ContentResolver contentResolver = this.getContentResolver();
-//    Cursor cur = contentResolver.query(contacts,
-//                                       projection, // Which columns to return 
-//                                       null,       // Which rows to return (all rows)
-//                                       null,       // Selection arguments (none)
-//                                       //Put the results in ascending order by name
-//                                       People.NAME + " ASC");
-//    
-//    String[] phone_message = new String[3];
-//    phone_message[0] = "5556";
-//    int i = 0;
-//    if (cur.moveToFirst()) {
-//        int phoneColumn = cur.getColumnIndex(People.NUMBER);
-//        do {
-//          ++i;
-//            // Get the field values
-//            String phoneNumber = cur.getString(phoneColumn);
-//            //phone_message[i] = phoneNumber;
-//        } while (cur.moveToNext());       
-//    }
-//    
-//    
-//    
-//    
-//    return phone_message;
-//}  
 
   private void invokeEmergencyResponse() {
     Log.d(mLogTag, "Invoking emergency response");
