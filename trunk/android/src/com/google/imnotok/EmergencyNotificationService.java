@@ -97,8 +97,8 @@ public class EmergencyNotificationService extends Service {
   	    
   	    String phoneNumber = "5556";
   	    //---TODO: Include the GPS location in the message.
-  	    Location loc = getLocation();
-  	    Log.d(mLogTag, "Sending the location: latitude: " + loc.getLatitude() + ", longitude: " + loc.getLongitude());
+  	    // Location loc = getLocation();
+  	    // Log.d(mLogTag, "Sending the location: latitude: " + loc.getLatitude() + ", longitude: " + loc.getLongitude());
   	    String message = "I am not OK!";
   	    
   	    String SENT = "SMS_SENT";
@@ -270,7 +270,8 @@ public class EmergencyNotificationService extends Service {
   /** Should be called from a separate thread since may block waiting for
    * location.
    */
-  private synchronized Location getLocation() {
+  @SuppressWarnings("unused")
+private synchronized Location getLocation() {
 	// Construct a copy of the current location.
 	while (mLocation == null) {
 	  try {

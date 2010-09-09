@@ -2,7 +2,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
   package="com.google.imnotok" android:versionCode="1" android:versionName="1.0">
   <application android:icon="@drawable/icon" android:label="@string/app_name">
-    <activity android:label="@string/app_name" android:name=".MainActivity">
+    <activity android:label="@string/app_name" android:name=".EmergencyContactsActivity">
       <intent-filter>
         <action android:name="android.intent.action.MAIN" />
         <category android:name="android.intent.category.LAUNCHER" />
@@ -12,9 +12,9 @@
     <service android:name=".EmergencyInfoSyncService"></service>
     <service android:name=".EmergencyNotificationService"></service>
     <service android:name=".PatternTrackingService"></service>
+    <activity android:name=".MainActivity"></activity>
     <activity android:name=".EmergencyInfoActivity"></activity>
     <activity android:name=".ApplicationSettingsActivity"></activity>
-    <activity android:name=".EmergencyContactsActivity"></activity>
     <receiver android:name=".StartupIntentReceiver">
       <intent-filter>
         <action android:name="android.intent.action.BOOT_COMPLETED" />
