@@ -16,4 +16,6 @@
     <string name="add_contact">Add a contact</string>
     <string name="view_contacts">View contacts</string>
     <string name="no_contacts">No contacts available to display.\n\nTo add contacts, press <font fgcolor="#ffffffff"><b>Menu</b></font> and touch <font fgcolor="#ffffffff"><b>Add contact</b></font>.</string>
+    <string name="checkbox_sms_notification">sms_notification</string>
+    <string name="checkbox_email_notification">email_notification</string>
 </resources>

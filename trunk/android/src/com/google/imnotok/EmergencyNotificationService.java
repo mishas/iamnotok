@@ -9,13 +9,16 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.SharedPreferences;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.Bundle;
 import android.os.IBinder;
+import android.preference.PreferenceManager;
 import android.telephony.SmsManager;
 import android.util.Log;
+import android.widget.TextView;
 import android.widget.Toast;
 
 /**
@@ -162,10 +165,39 @@ public class EmergencyNotificationService extends Service {
 	});
 	messageSender.start();
   } 
+  
+  
+  /**
+   * Sends an email
+   */
+  private void sendEmail() {
+    // TODO(raquelmendez): chose the correct contact to send the email to
+    String contact = "raquel.mendez.gomez@gmail.com";
+    
+    final Intent emailIntent = new Intent(android.content.Intent.ACTION_SEND);
+    emailIntent.setType("plain/text");
+    emailIntent.putExtra(android.content.Intent.EXTRA_EMAIL, contact);
+    emailIntent.putExtra(
+        android.content.Intent.EXTRA_SUBJECT,R.string.i_am_not_ok_start);
+    emailIntent.putExtra(
+        android.content.Intent.EXTRA_TEXT, R.string.i_am_not_ok_start);
+    Intent.createChooser(emailIntent, "Send mail...");
+      
+    
+  }
 
   private void invokeEmergencyResponse() {
     Log.d(mLogTag, "Invoking emergency response");
-    sendTextMessage();    
+    
+    // Check the user preferences:
+    SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
+    // If the user has enable the sms notifications, send them:
+    if(prefs.getBoolean(getString(R.string.checkbox_sms_notification), true)) {
+      Log.d(mLogTag, "Sending sms...");
+      sendTextMessage(); 
+    }       
+    sendEmail();
+    // TODO(raquelmendez): Do we want to inform the ways that are desactivated?
     mServiceRunning = false;
   }
 
@@ -282,5 +314,5 @@ private synchronized Location getLocation() {
 	public void onStatusChanged(String provider, int status, Bundle extras) {
 	}
 	  
-  }
+  }  
 }
