@@ -18,7 +18,7 @@ import android.os.IBinder;
 import android.preference.PreferenceManager;
 import android.telephony.SmsManager;
 import android.util.Log;
-import android.widget.TextView;
+import android.widget.RemoteViews;
 import android.widget.Toast;
 
 /**
@@ -38,14 +38,24 @@ public class EmergencyNotificationService extends Service {
    * 10 seconds.
    */
   public final static String SHOW_NOTIFICATION_WITH_DISABLE = "showNotification";
+
+  public final static int NORMAL_STATE = 0; 
+  public final static int WAITING_STATE = 1; 
+  public final static int EMERGENCY_STATE = 2; 
+  public static int mApplicationState = NORMAL_STATE;
+    
   private final static String STOP_EMERGENCY_INTENT = "com.google.imnotok.STOP_EMERGENCY";
+  public final static String I_AM_NOW_OK_ACTION = "com.google.imnotok.I_AM_NOW_OK";
   /** Time allowed for user to cancel the emergency response. */
-  private final static int waitForMs = 20000;
+  private static int waitForMs = 10000;  // miliseconds
+  private static final String defaultWaitForSeconds = "10";  // seconds
 
   private boolean mEmergencyResponseShouldBeDisabled = false;
   private boolean mServiceRunning = false;
   private int mNotificationID = 0;
   private Location mLocation;
+  private boolean mSMSNotification = true;
+  private boolean mEmailNotification = true;
 
   @Override
   public IBinder onBind(Intent intent) {
@@ -55,9 +65,37 @@ public class EmergencyNotificationService extends Service {
   @Override
   public void onStart(Intent intent, int startId) {
     Log.d(mLogTag, "onStart() called");
+    
+    // Check the user preferences.
+    SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
+    
+    // Cancellation time:
+    String delay_time = prefs.getString(
+        getString(R.string.edittext_cancelation_delay), defaultWaitForSeconds);
+    Log.d("Delay Time" + mLogTag, delay_time);
+    try {
+      waitForMs = Integer.parseInt(delay_time);
+      Log.d(mLogTag, delay_time);
+    }catch(NumberFormatException e) {
+       Log.e("delay_time", "Delay time "+delay_time+" not well formated");
+       waitForMs = Integer.parseInt(defaultWaitForSeconds);
+    }
+    waitForMs *= 1000;
+    
+    // SMS notification:
+    mSMSNotification = prefs.getBoolean(
+        getString(R.string.checkbox_sms_notification),mSMSNotification);
+    
+    // Email notification allowed:
+    mEmailNotification = prefs.getBoolean(
+        getString(R.string.checkbox_email_notification), mEmailNotification);
 
+    // TODO(raquelmendez): Should we tell the user if no notification method is 
+    // active?
+    
     if (!mServiceRunning) {
       Log.d(mLogTag, "Starting the service");
+      changeState(WAITING_STATE);
       mServiceRunning = true;
       boolean showNotification = intent.getBooleanExtra(SHOW_NOTIFICATION_WITH_DISABLE, false);
       this.setEmergencyFlagValue(true);
@@ -155,7 +193,7 @@ public class EmergencyNotificationService extends Service {
    */
   private void sendEmail() {
     // TODO(raquelmendez): chose the correct contact to send the email to
-    String contact = "raquel.mendez.gomez@gmail.com";
+    String contact = "raquelmendez@google.com";
 
     final Intent emailIntent = new Intent(android.content.Intent.ACTION_SEND);
     emailIntent.setType("plain/text");
@@ -170,13 +208,18 @@ public class EmergencyNotificationService extends Service {
 
     // Check the user preferences:
     SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
+
     // If the user has enable the sms notifications, send them:
-    if (prefs.getBoolean(getString(R.string.checkbox_sms_notification), true)) {
+
+    if(mSMSNotification) {
       Log.d(mLogTag, "Sending sms...");
-      sendTextMessage();
-    }
-    sendEmail();
-    // TODO(raquelmendez): Do we want to inform the ways that are desactivated?
+      sendTextMessage(); 
+    }  
+    if(mEmailNotification) {
+      Log.d(mLogTag, "Sending email...");
+      sendEmail(); 
+    } 
+
     mServiceRunning = false;
   }
 
@@ -223,8 +266,11 @@ public class EmergencyNotificationService extends Service {
     Thread waiterThread = new Thread(new Runnable() {
       @Override
       public void run() {
+        
+        
         try {
           Thread.sleep(waitForMs);
+          changeState(EMERGENCY_STATE);
         } catch (InterruptedException exception) {
           exception.printStackTrace();
         } finally {
@@ -277,6 +323,12 @@ public class EmergencyNotificationService extends Service {
     mlocManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, mlocListener);
   }
 
+  private void changeState(int new_state) {
+    mApplicationState = new_state;
+    RemoteViews views = new RemoteViews(this.getPackageName(), R.layout.emergency_button_widget);
+    EmergencyButtonWidgetProvider.setupViews(this, views);    
+  }
+  
   private class UserLocationListener implements LocationListener {
     @Override
     public void onLocationChanged(Location location) {

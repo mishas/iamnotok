@@ -12,4 +12,10 @@
           android:summary="Allow notifications via email" 
           android:enabled="true" 
           android:defaultValue="true" />
+       <EditTextPreference 
+          android:key="@string/edittext_cancelation_delay" 
+          android:title="Cancelation delay" 
+          android:summary="Seconds before notifying of emergency situation." 
+          android:numeric="signed"
+          android:defaultValue="10" />      
 </PreferenceScreen>
