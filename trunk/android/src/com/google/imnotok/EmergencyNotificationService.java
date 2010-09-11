@@ -101,12 +101,19 @@ public class EmergencyNotificationService extends Service {
       public void run() {
         Log.d(mLogTag, "Sending sms");
         String phoneNumber = "5556";
-        Location loc = mLocationTracker.getLocation();
-        Log.d(mLogTag, "Sending the location - latitude: " + loc.getLatitude() + ", longitude: "
-            + loc.getLongitude());
-        String message =
-            "I am not OK! My current location is: latitude " + loc.getLatitude() + ", longitude "
-                + loc.getLongitude();
+        String message = "";
+        if (getState() == NORMAL_STATE) {
+        	message = "I am now OK";   
+            Log.d(mLogTag, "Sending the message " + message);
+        } else {
+        	Log.d(mLogTag, "Getting location");
+	        Location loc = mLocationTracker.getLocation();
+	        Log.d(mLogTag, "Sending the location - latitude: " + loc.getLatitude() + ", longitude: "
+	            + loc.getLongitude());
+	        message =
+	            "I am not OK! My current location is: latitude " + loc.getLatitude() + ", longitude "
+	                + loc.getLongitude();
+        }
 
         String SENT = "SMS_SENT";
         String DELIVERED = "SMS_DELIVERED";
@@ -170,35 +177,33 @@ public class EmergencyNotificationService extends Service {
   private void sendEmail() {
     // TODO(raquelmendez): chose the correct contact to send the email to
     String contact = "raquelmendez@google.com";
+    Log.d(mLogTag, "Sending email");
+    String message = "";
+    if (getState() == NORMAL_STATE) {
+	  message = "I am now OK";  
+      Log.d(mLogTag, "Sending the email " + message);
+    } else {
+    	Log.d(mLogTag, "Getting location");
+        Location loc = mLocationTracker.getLocation();
+        Log.d(mLogTag, "Sending the location - latitude: " + loc.getLatitude() + ", longitude: "
+            + loc.getLongitude());
+        message =
+            "I am not OK! My current location is: latitude " + loc.getLatitude() + ", longitude "
+                + loc.getLongitude();    	
+    }
 
     final Intent emailIntent = new Intent(android.content.Intent.ACTION_SEND);
     emailIntent.setType("plain/text");
     emailIntent.putExtra(android.content.Intent.EXTRA_EMAIL, contact);
-    emailIntent.putExtra(android.content.Intent.EXTRA_SUBJECT, R.string.i_am_not_ok_start);
-    emailIntent.putExtra(android.content.Intent.EXTRA_TEXT, R.string.i_am_not_ok_start);
+    emailIntent.putExtra(android.content.Intent.EXTRA_SUBJECT, message);
+    emailIntent.putExtra(android.content.Intent.EXTRA_TEXT, message);
     Intent.createChooser(emailIntent, "Send mail...");
   }
 
   private void invokeEmergencyResponse() {
     Log.d(mLogTag, "Invoking emergency response");
-    
-    // Register receiver for I'm Now OK intents
-    final BroadcastReceiver iAmNowOkReceiver = new BroadcastReceiver() {
-      @Override
-      public void onReceive(Context context, Intent intent) {
-        Log.d(mLogTag, "Received I'm now OK intent...");
-        if (EmergencyNotificationService.this.getState() == EMERGENCY_STATE)
-        {
-          Log.d(mLogTag, "Application in emergency state, cancelling the emergency");
-          EmergencyNotificationService.this.stopEmergency();          
-        }        
-      }
-    };
-    IntentFilter intentFilter = new IntentFilter(I_AM_NOW_OK_INTENT);
-    this.registerReceiver(iAmNowOkReceiver, intentFilter);
 
-    // If the user has enable the sms notifications, send them:
-    while (this.getState() == NORMAL_STATE) {
+    while (this.getState() == EMERGENCY_STATE) {
       if (mLocationTracker.shouldSendAnotherUpdate()) {
         if (mNotifyViaSMS) {
           sendTextMessage();
@@ -249,9 +254,25 @@ public class EmergencyNotificationService extends Service {
     };
     IntentFilter intentFilter = new IntentFilter(STOP_EMERGENCY_INTENT);
     this.registerReceiver(cancellationReceiver, intentFilter);
+    
+    
+    // Register a receiver that can receive the I am now OK intents.
+    final BroadcastReceiver imnowOKReceiver = new BroadcastReceiver() {
+      @Override
+      public void onReceive(Context context, Intent intent) {
+        Log.d(mLogTag, "Received I am now OK intent...");
+        if (EmergencyNotificationService.this.getState() == EMERGENCY_STATE)
+        {
+          Log.d(mLogTag, "Application in emergency state, I am now OK");
+          EmergencyNotificationService.this.stopEmergency();
+        }        
+      }
+    };
+    IntentFilter intentIamNowOKFilter = new IntentFilter(I_AM_NOW_OK_INTENT);
+    this.registerReceiver(imnowOKReceiver, intentIamNowOKFilter);
 
     // Start the waiting in a separate thread since otherwise the service will
-    // not be able to receive the intent for cancelling the emergency response.
+    // not be able to receive the intent for canceling the emergency response.
     Thread waiterThread = new Thread(new Runnable() {
       @Override
       public void run() {
@@ -263,7 +284,7 @@ public class EmergencyNotificationService extends Service {
           exception.printStackTrace();
         } finally {
           notificationManager.cancel(mNotificationID++);
-          if (EmergencyNotificationService.this.getState() == WAITING_STATE) {
+          if (EmergencyNotificationService.this.getState() == EMERGENCY_STATE) {
             invokeEmergencyResponse();
           }
         }
@@ -310,6 +331,11 @@ public class EmergencyNotificationService extends Service {
   private void stopEmergency() {
     Log.d(mLogTag, "Stopping emergency");
     this.changeState(NORMAL_STATE);
-    // TODO(vytautas): send the I'm now ok messages.
+    if (mNotifyViaSMS) {
+      sendTextMessage();
+    }
+    if (mNotifyViaEmail) {
+      sendEmail();
+    }
   }
 }
