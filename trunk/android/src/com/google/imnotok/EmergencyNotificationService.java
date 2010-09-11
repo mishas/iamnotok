@@ -5,15 +5,14 @@ import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
+import android.appwidget.AppWidgetManager;
 import android.content.BroadcastReceiver;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.location.Location;
-import android.location.LocationListener;
-import android.location.LocationManager;
-import android.os.Bundle;
 import android.os.IBinder;
 import android.preference.PreferenceManager;
 import android.telephony.SmsManager;
@@ -30,6 +29,7 @@ import android.widget.Toast;
  */
 public class EmergencyNotificationService extends Service {
   private final static String mLogTag = "ImNotOk - EmergencyNotificationService";
+
   /**
    * Field name for the boolean that should be passed with the intent to start
    * this service. It tells whether the notification in the top bar should be
@@ -38,24 +38,22 @@ public class EmergencyNotificationService extends Service {
    * 10 seconds.
    */
   public final static String SHOW_NOTIFICATION_WITH_DISABLE = "showNotification";
-
-  public final static int NORMAL_STATE = 0; 
-  public final static int WAITING_STATE = 1; 
-  public final static int EMERGENCY_STATE = 2; 
-  public static int mApplicationState = NORMAL_STATE;
-    
   private final static String STOP_EMERGENCY_INTENT = "com.google.imnotok.STOP_EMERGENCY";
-  public final static String I_AM_NOW_OK_ACTION = "com.google.imnotok.I_AM_NOW_OK";
-  /** Time allowed for user to cancel the emergency response. */
-  private static int waitForMs = 10000;  // miliseconds
-  private static final String defaultWaitForSeconds = "10";  // seconds
+  public final static String I_AM_NOW_OK_INTENT = "com.google.imnotok.I_AM_NOW_OK";
 
-  private boolean mEmergencyResponseShouldBeDisabled = false;
-  private boolean mServiceRunning = false;
+  public final static int NORMAL_STATE = 0;
+  public final static int WAITING_STATE = 1;
+  public final static int EMERGENCY_STATE = 2;
+  public static int mApplicationState = NORMAL_STATE;
+
+  /** Default time allowed for user to cancel the emergency response. */
+  private static int DEFAULT_WAIT_TO_CANCEL = 10000; // milliseconds
+
   private int mNotificationID = 0;
-  private Location mLocation;
-  private boolean mSMSNotification = true;
-  private boolean mEmailNotification = true;
+  private LocationTracker mLocationTracker;
+  private boolean mNotifyViaSMS = true;
+  private boolean mNotifyViaEmail = true;
+  private int mWaitBetweenMessages = 5000;
 
   @Override
   public IBinder onBind(Intent intent) {
@@ -66,44 +64,22 @@ public class EmergencyNotificationService extends Service {
   public void onStart(Intent intent, int startId) {
     Log.d(mLogTag, "onStart() called");
     
-    // Check the user preferences.
     SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
-    
-    // Cancellation time:
-    String delay_time = prefs.getString(
-        getString(R.string.edittext_cancelation_delay), defaultWaitForSeconds);
-    Log.d("Delay Time" + mLogTag, delay_time);
-    try {
-      waitForMs = Integer.parseInt(delay_time);
-      Log.d(mLogTag, delay_time);
-    }catch(NumberFormatException e) {
-       Log.e("delay_time", "Delay time "+delay_time+" not well formated");
-       waitForMs = Integer.parseInt(defaultWaitForSeconds);
-    }
-    waitForMs *= 1000;
-    
-    // SMS notification:
-    mSMSNotification = prefs.getBoolean(
-        getString(R.string.checkbox_sms_notification),mSMSNotification);
-    
-    // Email notification allowed:
-    mEmailNotification = prefs.getBoolean(
-        getString(R.string.checkbox_email_notification), mEmailNotification);
+    mNotifyViaSMS =
+        prefs.getBoolean(getString(R.string.checkbox_sms_notification), true);
+    mNotifyViaEmail =
+        prefs.getBoolean(getString(R.string.checkbox_email_notification), true);
 
-    // TODO(raquelmendez): Should we tell the user if no notification method is 
-    // active?
-    
-    if (!mServiceRunning) {
+    // TODO(raquelmendez): tell the user if no notification method is selected.
+
+    if (this.getState() == NORMAL_STATE) {
       Log.d(mLogTag, "Starting the service");
       changeState(WAITING_STATE);
-      mServiceRunning = true;
       boolean showNotification = intent.getBooleanExtra(SHOW_NOTIFICATION_WITH_DISABLE, false);
-      this.setEmergencyFlagValue(true);
 
       // Start location tracker from here since it takes some time to get
       // the first GPS fix.
-      mLocation = null;
-      this.startLocationTracker();
+      mLocationTracker = new LocationTracker(this);
 
       if (showNotification) {
         this.showDisableNotificationAndWaitToInvokeResponse();
@@ -112,7 +88,7 @@ public class EmergencyNotificationService extends Service {
       }
       super.onStart(intent, startId);
     } else {
-      Log.d(mLogTag, "Service already running");
+      Log.d(mLogTag, "Application already in either waiting or emergency mode.");
     }
   }
 
@@ -125,7 +101,7 @@ public class EmergencyNotificationService extends Service {
       public void run() {
         Log.d(mLogTag, "Sending sms");
         String phoneNumber = "5556";
-        Location loc = getLocation();
+        Location loc = mLocationTracker.getLocation();
         Log.d(mLogTag, "Sending the location - latitude: " + loc.getLatitude() + ", longitude: "
             + loc.getLongitude());
         String message =
@@ -205,29 +181,42 @@ public class EmergencyNotificationService extends Service {
 
   private void invokeEmergencyResponse() {
     Log.d(mLogTag, "Invoking emergency response");
-
-    // Check the user preferences:
-    SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
+    
+    // Register receiver for I'm Now OK intents
+    final BroadcastReceiver iAmNowOkReceiver = new BroadcastReceiver() {
+      @Override
+      public void onReceive(Context context, Intent intent) {
+        Log.d(mLogTag, "Received I'm now OK intent...");
+        if (EmergencyNotificationService.this.getState() == EMERGENCY_STATE)
+        {
+          Log.d(mLogTag, "Application in emergency state, cancelling the emergency");
+          EmergencyNotificationService.this.stopEmergency();          
+        }        
+      }
+    };
+    IntentFilter intentFilter = new IntentFilter(I_AM_NOW_OK_INTENT);
+    this.registerReceiver(iAmNowOkReceiver, intentFilter);
 
     // If the user has enable the sms notifications, send them:
-
-    if(mSMSNotification) {
-      Log.d(mLogTag, "Sending sms...");
-      sendTextMessage(); 
-    }  
-    if(mEmailNotification) {
-      Log.d(mLogTag, "Sending email...");
-      sendEmail(); 
-    } 
-
-    mServiceRunning = false;
+    while (this.getState() == NORMAL_STATE) {
+      if (mLocationTracker.shouldSendAnotherUpdate()) {
+        if (mNotifyViaSMS) {
+          sendTextMessage();
+        }
+        if (mNotifyViaEmail) {
+          sendEmail();
+        }
+        try {
+          Thread.sleep(mWaitBetweenMessages);
+        } catch (InterruptedException exception) {
+          exception.printStackTrace();
+        }
+      }
+    }
   }
 
   private void showDisableNotificationAndWaitToInvokeResponse() {
     Log.d(mLogTag, "Showing notification and waiting");
-
-    // Reset the flag.
-    setEmergencyFlagValue(true);
 
     // Show a notification.
     final NotificationManager notificationManager =
@@ -247,15 +236,15 @@ public class EmergencyNotificationService extends Service {
     notificationManager.notify(mNotificationID, notification);
 
     // Register a receiver that can receive the cancellation intents.
-    BroadcastReceiver cancellationReceiver = new BroadcastReceiver() {
+    final BroadcastReceiver cancellationReceiver = new BroadcastReceiver() {
       @Override
       public void onReceive(Context context, Intent intent) {
         Log.d(mLogTag, "Received cancellation intent...");
-        // TODO(vytautas): check the state of the service when continuous mode
-        // is introduced.
-        EmergencyNotificationService.this.setEmergencyFlagValue(false);
-        // TODO(vytautas): make this multi-thread friendly.
-        EmergencyNotificationService.this.mServiceRunning = false;
+        if (EmergencyNotificationService.this.getState() == WAITING_STATE)
+        {
+          Log.d(mLogTag, "Application in waiting state, cancelling the emergency");
+          EmergencyNotificationService.this.changeState(NORMAL_STATE);
+        }        
       }
     };
     IntentFilter intentFilter = new IntentFilter(STOP_EMERGENCY_INTENT);
@@ -266,16 +255,15 @@ public class EmergencyNotificationService extends Service {
     Thread waiterThread = new Thread(new Runnable() {
       @Override
       public void run() {
-        
-        
         try {
-          Thread.sleep(waitForMs);
+          Thread.sleep(EmergencyNotificationService.this.getWaitingTime());
+          EmergencyNotificationService.this.unregisterReceiver(cancellationReceiver);
           changeState(EMERGENCY_STATE);
         } catch (InterruptedException exception) {
           exception.printStackTrace();
         } finally {
           notificationManager.cancel(mNotificationID++);
-          if (EmergencyNotificationService.this.getEmergencyFlagValue()) {
+          if (EmergencyNotificationService.this.getState() == WAITING_STATE) {
             invokeEmergencyResponse();
           }
         }
@@ -284,75 +272,44 @@ public class EmergencyNotificationService extends Service {
     waiterThread.start();
   }
 
-  private synchronized void setEmergencyFlagValue(boolean newValue) {
-    mEmergencyResponseShouldBeDisabled = newValue;
-  }
-
-  private synchronized boolean getEmergencyFlagValue() {
-    return mEmergencyResponseShouldBeDisabled;
-  }
-
-  private synchronized void setLocation(Location location) {
-    mLocation = location;
-    this.notifyAll();
-  }
-
-  /**
-   * Should be called from a separate thread since may block waiting for
-   * location.
-   */
-  @SuppressWarnings("unused")
-  private synchronized Location getLocation() {
-    // Construct a copy of the current location.
-    while (mLocation == null) {
-      try {
-        Log.d(mLogTag, "Waiting for location");
-        this.wait();
-      } catch (InterruptedException e) {
-        e.printStackTrace();
-      }
-    }
-    return new Location(mLocation);
-  }
-
-  private void startLocationTracker() {
-    // TODO(vytautas): get permission to change settings and make sure we
-    // can turn the GPS on even if the user has disabled it.
-    LocationManager mlocManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
-    LocationListener mlocListener = new UserLocationListener();
-    mlocManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, mlocListener);
-  }
-
-  private void changeState(int new_state) {
+  private synchronized void changeState(int new_state) {
     mApplicationState = new_state;
+    
+    // Push the updates to the widget.
+    ComponentName thisWidget = new ComponentName(this, EmergencyButtonWidgetProvider.class);
     RemoteViews views = new RemoteViews(this.getPackageName(), R.layout.emergency_button_widget);
-    EmergencyButtonWidgetProvider.setupViews(this, views);    
+    EmergencyButtonWidgetProvider.setupViews(this, views);
+    AppWidgetManager.getInstance(this).updateAppWidget(thisWidget, views);
   }
   
-  private class UserLocationListener implements LocationListener {
-    @Override
-    public void onLocationChanged(Location location) {
-      Log.d(mLogTag, "Location has changed");
-      if (EmergencyNotificationService.this.mLocation != null) {
-        if (location.getAccuracy() < EmergencyNotificationService.this.mLocation.getAccuracy()) {
-          EmergencyNotificationService.this.setLocation(location);
-        }
-      } else {
-        EmergencyNotificationService.this.setLocation(location);
-      }
-    }
+  private synchronized int getState() {
+    return mApplicationState;
+  }
+  
+  private int getWaitingTime() {
+    SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
 
-    @Override
-    public void onProviderDisabled(String provider) {
-    }
+    // Cancellation time:
+    String delay_time =
+        prefs.getString(getString(R.string.edittext_cancelation_delay),
+            Integer.toString(DEFAULT_WAIT_TO_CANCEL / 1000));
+    Log.d(mLogTag, "Delay time received from preferences - " + delay_time);
 
-    @Override
-    public void onProviderEnabled(String provider) {
+    int waitForMs;
+    try {
+      int waitForSecs = Integer.parseInt(delay_time);
+      waitForMs = waitForSecs * 1000;
+    } catch (NumberFormatException e) {
+      Log.e("delay_time", "Delay time ill-formated");
+      waitForMs = DEFAULT_WAIT_TO_CANCEL;
     }
-
-    @Override
-    public void onStatusChanged(String provider, int status, Bundle extras) {
-    }
-
+    Log.d(mLogTag, "Waiting " + waitForMs + " milliseconds.");
+    return waitForMs;
+  }
+  
+  private void stopEmergency() {
+    Log.d(mLogTag, "Stopping emergency");
+    this.changeState(NORMAL_STATE);
+    // TODO(vytautas): send the I'm now ok messages.
   }
 }

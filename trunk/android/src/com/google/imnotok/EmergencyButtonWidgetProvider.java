@@ -10,7 +10,7 @@ import android.view.View;
 import android.widget.RemoteViews;
 
 public class EmergencyButtonWidgetProvider extends AppWidgetProvider {
-
+ 
   @Override
   public void onUpdate(Context context, AppWidgetManager appWidgetManager, int[] appWidgetIds) {
     final int numWidgets = appWidgetIds.length;
@@ -23,9 +23,6 @@ public class EmergencyButtonWidgetProvider extends AppWidgetProvider {
       // Get the remote views and set the pending intent for the emergency button.
       RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.emergency_button_widget);
       setupViews(context, views);
-      views.setViewVisibility(R.id.ImNowOKButton, View.INVISIBLE);
-      views.setViewVisibility(R.id.EmergencyButton, View.VISIBLE);      
-      
       appWidgetManager.updateAppWidget(appWidgetId, views);
     }
     
@@ -40,7 +37,7 @@ public class EmergencyButtonWidgetProvider extends AppWidgetProvider {
     views.setOnClickPendingIntent(R.id.EmergencyButton, pendingIntent);
     
     // Create ImNowOk intent
-    Intent iAmNowOkIntent = new Intent(EmergencyNotificationService.I_AM_NOW_OK_ACTION);
+    Intent iAmNowOkIntent = new Intent(EmergencyNotificationService.I_AM_NOW_OK_INTENT);
     PendingIntent pendingIAmNowOkIntent = PendingIntent.getBroadcast(context, 0, iAmNowOkIntent, 0);
     views.setOnClickPendingIntent(R.id.ImNowOKButton, pendingIntent);
     
