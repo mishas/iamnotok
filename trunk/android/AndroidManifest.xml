@@ -14,7 +14,6 @@
     <service android:name=".EmergencyNotificationService"></service>
     <service android:name=".PatternTrackingService"></service>
     <activity android:name=".MainActivity"></activity>
-    <activity android:name=".EmergencyInfoActivity"></activity>
     <activity android:name=".ApplicationSettingsActivity"></activity>
     <receiver android:name=".StartupIntentReceiver">
       <intent-filter>

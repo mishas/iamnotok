@@ -30,7 +30,7 @@ public class EmergencyContactsActivity extends ListActivity {
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.contacts_list);
-		contactsHelper = new EmergencyContactsHelper(this);
+		contactsHelper = new EmergencyContactsHelper(getApplicationContext());
 		setListAdapter(createAdapter());
 		setupListView();
 	}

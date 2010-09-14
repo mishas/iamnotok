@@ -1,5 +1,7 @@
 package com.google.imnotok;
 
+import com.google.imnotok.EmergencyContactsHelper.Contact;
+
 import android.app.Activity;
 import android.app.Notification;
 import android.app.NotificationManager;
@@ -54,6 +56,8 @@ public class EmergencyNotificationService extends Service {
   private boolean mNotifyViaSMS = true;
   private boolean mNotifyViaEmail = true;
   private int mWaitBetweenMessages = 5000;
+  
+  private EmergencyContactsHelper contactHelper;
 
   @Override
   public IBinder onBind(Intent intent) {
@@ -69,6 +73,9 @@ public class EmergencyNotificationService extends Service {
         prefs.getBoolean(getString(R.string.checkbox_sms_notification), true);
     mNotifyViaEmail =
         prefs.getBoolean(getString(R.string.checkbox_email_notification), true);
+    
+    if (contactHelper == null)
+    	contactHelper = new EmergencyContactsHelper(getApplicationContext());
 
     // TODO(raquelmendez): tell the user if no notification method is selected.
 
@@ -91,16 +98,29 @@ public class EmergencyNotificationService extends Service {
       Log.d(mLogTag, "Application already in either waiting or emergency mode.");
     }
   }
+  
+  private void sendTextNotifications() {
+	  for (Contact contact : contactHelper.getAllContacts())
+		  sendTextMessage(contact.getPhone());
+  }
+  
+  private void sendEmailNotifications() {
+	  String emailList = "";
+	  for (Contact contact : contactHelper.getAllContacts())
+		  if (contact.getEmail() != null)
+		  emailList += contact.getEmail() + ",";
+	  if (emailList.length() > 0)
+		  sendEmailMessage(emailList);
+  }
 
   /**
    * Sends a sms to another device
    **/
-  private void sendTextMessage() {
+  private void sendTextMessage(final String phoneNumber) {
     Thread messageSender = new Thread(new Runnable() {
       @Override
       public void run() {
-        Log.d(mLogTag, "Sending sms");
-        String phoneNumber = "5556";
+        Log.d(mLogTag, "Sending sms to: " + phoneNumber);
         String message = "";
         if (getState() == NORMAL_STATE) {
         	message = "I am now OK";   
@@ -170,14 +190,15 @@ public class EmergencyNotificationService extends Service {
     messageSender.start();
   }
 
+  private String getMapUrl(Location loc) {
+	  return "http://maps.google.com/maps?ll=" + loc.getLatitude() + "," + loc.getLongitude();
+  }
 
   /**
    * Sends an email
    */
-  private void sendEmail() {
-    // TODO(raquelmendez): chose the correct contact to send the email to
-    String contact = "raquelmendez@google.com";
-    Log.d(mLogTag, "Sending email");
+  private void sendEmailMessage(String to) {
+    Log.d(mLogTag, "Sending email to: " + to);
     String message = "";
     if (getState() == NORMAL_STATE) {
 	  message = "I am now OK";  
@@ -189,12 +210,13 @@ public class EmergencyNotificationService extends Service {
             + loc.getLongitude());
         message =
             "I am not OK! My current location is: latitude " + loc.getLatitude() + ", longitude "
-                + loc.getLongitude();    	
+                + loc.getLongitude();
+        message += " " + getMapUrl(loc);
     }
 
     try {   
       GMailSender sender = new GMailSender("imnotokandroidapplication@gmail.com", "googlezurich");
-      sender.sendMail(message, message,"imnotokapplication@gmail.com","raquelmendez@google.com");   
+      sender.sendMail(message, message,"imnotokapplication@gmail.com",to);   
     } catch (Exception e) {   
       Log.e("SendMail", e.getMessage(), e);   
     }
@@ -206,10 +228,10 @@ public class EmergencyNotificationService extends Service {
     while (this.getState() == EMERGENCY_STATE) {
       if (mLocationTracker.shouldSendAnotherUpdate()) {
         if (mNotifyViaSMS) {
-          sendTextMessage();
+          sendTextNotifications();
         }
         if (mNotifyViaEmail) {
-          sendEmail();
+          sendEmailNotifications();
         }
         try {
           Thread.sleep(mWaitBetweenMessages);
@@ -332,10 +354,10 @@ public class EmergencyNotificationService extends Service {
     Log.d(mLogTag, "Stopping emergency");
     this.changeState(NORMAL_STATE);
     if (mNotifyViaSMS) {
-      sendTextMessage();
+      sendTextNotifications();
     }
     if (mNotifyViaEmail) {
-      sendEmail();
+      sendEmailNotifications();
     }
   }
 }

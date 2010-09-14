@@ -4,8 +4,8 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.TreeSet;
 
-import android.app.Activity;
 import android.content.ContentResolver;
+import android.content.Context;
 import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.provider.ContactsContract;
@@ -20,18 +20,18 @@ public class EmergencyContactsHelper {
 	private static final String PREFS_NAME = "MyPrefsFile";
 	private static final String CONTACT_IDS_PROPERTY_NAME = "contact_ids";
 
-	private Activity activity;
+	private Context context;
 	private TreeSet<String> contactIds;
 	private HashMap<String, Contact> contacts;
 	
-	public EmergencyContactsHelper(Activity context) {
-		this.activity = context;
+	public EmergencyContactsHelper(Context context) {
+		this.context = context;
 		// ResetContacts();
 		contactIds();
 	}
 	
 	public void ResetContacts() {
-		SharedPreferences settings =  activity.getSharedPreferences(PREFS_NAME, 0);
+		SharedPreferences settings =  context.getSharedPreferences(PREFS_NAME, 0);
 		SharedPreferences.Editor editor = settings.edit();
 		editor.putString(CONTACT_IDS_PROPERTY_NAME, "");
 		editor.commit();
@@ -41,7 +41,7 @@ public class EmergencyContactsHelper {
 		if (contactIds != null) return contactIds;
 		contactIds = new TreeSet<String>();
 		contacts = new HashMap<String, EmergencyContactsHelper.Contact>();
-		SharedPreferences settings =  activity.getSharedPreferences(PREFS_NAME, 0);
+		SharedPreferences settings =  context.getSharedPreferences(PREFS_NAME, 0);
 		String list = settings.getString(CONTACT_IDS_PROPERTY_NAME, "");
 		for (String contactId : list.split(",")) {
 			Contact contact = new Contact(contactId);
@@ -50,6 +50,10 @@ public class EmergencyContactsHelper {
 			contacts.put(contactId, contact);
 		}
 		return contactIds();
+	}
+	
+	public Collection<Contact> getAllContacts() {
+		return contacts.values();
 	}
 	
 	public Contact getContactWithId(String contactId) {
@@ -72,7 +76,7 @@ public class EmergencyContactsHelper {
 		}
 		contactIds.add(contactId);
 		contacts.put(contactId, contact);
-		SharedPreferences settings =  activity.getSharedPreferences(PREFS_NAME, 0);
+		SharedPreferences settings =  context.getSharedPreferences(PREFS_NAME, 0);
 		SharedPreferences.Editor editor = settings.edit();
 		String list = settings.getString(CONTACT_IDS_PROPERTY_NAME, "");
 		Log.d("ContactsHelper", "list = " + list);
@@ -88,7 +92,7 @@ public class EmergencyContactsHelper {
 	public boolean deleteContact(String contactId) {
 		if (!hasContact(contactId)) return false;
 		contactIds.remove(contactId);
-		SharedPreferences settings =  activity.getSharedPreferences(PREFS_NAME, 0);
+		SharedPreferences settings =  context.getSharedPreferences(PREFS_NAME, 0);
 		SharedPreferences.Editor editor = settings.edit();
 		String list = "";
 		for (String oldContactId : contactIds)
@@ -105,6 +109,7 @@ public class EmergencyContactsHelper {
 		private String id;
 		private String name;
 		private String phone;
+		private String email;
 		
 		public Contact(String id) {
 			this.id = id;
@@ -112,7 +117,7 @@ public class EmergencyContactsHelper {
 		
 		public boolean lookup() {
 			try {
-				ContentResolver cr = activity.getContentResolver();
+				ContentResolver cr = context.getContentResolver();
 				Cursor cur = cr.query(ContactsContract.Contacts.CONTENT_URI,
 									  null, ContactsContract.Contacts._ID + " = ?",
 									  new String[]{id}, null);
@@ -127,6 +132,14 @@ public class EmergencyContactsHelper {
 						} else {
 							Log.w("ContactsHelper", "pCur.moveTONext failed");
 						}
+					}
+					Cursor eCur = cr.query(ContactsContract.CommonDataKinds.Email.CONTENT_URI,
+										   null, ContactsContract.CommonDataKinds.Email.CONTACT_ID + " = ?",
+										   new String[]{id}, null);
+					if (eCur.moveToNext()) {
+						this.email = eCur.getString(eCur.getColumnIndex(ContactsContract.CommonDataKinds.Email.DATA));
+					} else {
+						Log.w("ContactsHelper", "eCur.moveTONext failed");
 					}
 					Log.d("ContactsHelper", toString());
 					return true;
@@ -148,12 +161,16 @@ public class EmergencyContactsHelper {
 			return name;
 		}
 
-		public String getPhones() {
+		public String getPhone() {
 			return phone;
 		}
 		
+		public String getEmail() {
+			return email;
+		}
+		
 		public String toString() {
-			return id + ": " + name + " (" + phone + ")";
+			return id + ": " + name + " (" + phone + ") <" + email + ">";
 		}
 	}
 }
