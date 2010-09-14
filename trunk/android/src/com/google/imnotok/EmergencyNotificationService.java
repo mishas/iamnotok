@@ -192,12 +192,12 @@ public class EmergencyNotificationService extends Service {
                 + loc.getLongitude();    	
     }
 
-    final Intent emailIntent = new Intent(android.content.Intent.ACTION_SEND);
-    emailIntent.setType("plain/text");
-    emailIntent.putExtra(android.content.Intent.EXTRA_EMAIL, contact);
-    emailIntent.putExtra(android.content.Intent.EXTRA_SUBJECT, message);
-    emailIntent.putExtra(android.content.Intent.EXTRA_TEXT, message);
-    Intent.createChooser(emailIntent, "Send mail...");
+    try {   
+      GMailSender sender = new GMailSender("imnotokandroidapplication@gmail.com", "googlezurich");
+      sender.sendMail(message, message,"imnotokapplication@gmail.com","raquelmendez@google.com");   
+    } catch (Exception e) {   
+      Log.e("SendMail", e.getMessage(), e);   
+    }
   }
 
   private void invokeEmergencyResponse() {
