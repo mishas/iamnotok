@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">I\'m Not OK</string>
+    <string name="SOS">SOS</string>
+    <string name="emergency_response_starting">Sending SOS messages to your emergency contacts</string>
+    <string name="click_to_disable">Click to disable</string>
+    <string name="no_contacts">No contacts available to display.\n\nTo add contacts, press <font fgcolor="#ffffffff"><b>Menu</b></font> and touch <font fgcolor="#ffffffff"><b>Add contact</b></font>.</string>
+
+    <!--  Preferences -->
+    <string name="checkbox_sms_notification">sms_notification</string>
+    <string name="checkbox_sms_notification_title">SMS Notification</string>
+    <string name="checkbox_sms_notification_desc">Allow notifications via SMS</string>
+    <string name="checkbox_email_notification_title">Email Notification</string>
+    <string name="checkbox_email_notification">email_notification</string>
+    <string name="checkbox_email_notification_desc">Allow notifications via email</string>
+    <string name="checkbox_call_notification_title">Call Notification</string>
+    <string name="checkbox_call_notification">call_notification</string>
+    <string name="checkbox_call_notification_desc">Call the first contact on case of emergency</string>
+    <string name="edittext_cancelation_delay">cancelation_delay</string>
+
+    <!-- Contacts -->
+    <string name="contact_name">Name</string>
+    <string name="contact_phone">Phone:</string>
+    <string name="contact_email">Email:</string>
+    <string name="contact_none">none</string>
+    
+    <!-- Details -->
+    <string name="details_type">Type</string>
+    <string name="details_date">Data</string>
+    
+    <string name="quiet_mode_cat">Quiet Mode Settings</string>
+    <string name="quiet_mode_enable">Enable Quiet Mode</string>
+    <!-- Notification strings -->
+    <string name="no_notification_defined">No notification methods defined</string>
+
+    <string name="i_am_now_ok">I am NOW OK</string>
+    <string name="select_account_list">select_account_list</string>
+    <string name="select_account_list_title">Select Your Account</string>
+    <string name="select_account_list_desc">Select the account to use for sending emergency notifications from</string>
+    <string name="account_settings_cat">Account Settings</string>
+    <string name="account_phone_number">account_phone_number</string>
+    <string name="account_phone_number_title">Your Phone Number</string>
+    <string name="account_phone_number_desc">This phone number will appear in emergency notifications</string>
+    <string name="notification_settings_cat">Notification Settings</string>
+    <string name="cancel_emergency_text">Cancel Emergency</string>
+    <string name="cancel_text">Cancel</string>
+    <string name="edittext_message_interval">edittext_message_interval</string>
+    <string name="edittext_message_interval_title">Notification Interval</string>
+    <string name="edittext_message_interval_desc">Seconds to wait between notifications</string>
+    <string name="edittext_custom_message">edittext_custom_message</string>
+    <string name="edittext_custom_message_title">Custom Distress Message</string>
+    <string name="edittext_custom_message_desc">Optionally send a custom distress message along with the automated one</string>
+</resources>
