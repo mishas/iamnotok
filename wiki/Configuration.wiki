@@ -1,0 +1,27 @@
+#summary How to configure the "I'm Not OK" application
+
+= Introduction =
+
+This page describe configuration process of a future version of the "I'm Not OK" application.
+
+= Mandatory configuration =
+
+These options are required to make the system operational.
+ 
+ * Contacts - one or more contacts records, containing either a phone number for sending SMS notification, and/or an email address for sending email notification.
+
+= Optional configuration =
+
+These options let the user customize the application for her needs:
+
+ * Call Phone Number - If a phone number is set, the system will make a voice call and open the speaker when entering emergency state. The default phone number is empty, skipping the voice call.
+
+ * Account - when sending Email notification, the user name and email address are used for creating the mail subject and body. If not configured, the default user account is used. If no account is configured on the phone, a default "Unknown User" name is used.
+
+ * Quite Mode - when enabled, pressing the on/off button 6 times within 5 seconds cause the application to start the emergency procedure, as if the "SOS" button was clicked within the application or the widget. This option is enabled by default.
+
+ * Custom Message - message to use when sending SMS or email notifications. If not configured, the application uses a default message.
+
+ * Notification Interval - when in emergency state, every Notification Interval seconds the system will send notifications to all contacts.
+
+ * Cancelation Delay - after triggering an emergency, the system waits Cancelation Delay seconds before entering emergency state. If the user cancel the emergency within Cancelation Delay seconds, no notifications are sent.
