@@ -38,7 +38,7 @@ There are few solutions for keeping contacts information.
 
 == Use system contacts database ==
 
-Keep a contact id and notifications preferences (send sms, send email), and get the information from the system contacts database when sending a notification, using the default phone number and email address.
+Keep a contact id and notifications preferences (send sms, send email), and get the information from the system contacts database when sending a notification, using the first mobile phone number and first email address.
 
 Modifying the system contacts database may invalidate the emergency configuration. For example, if you added an email notification to one contact, and then you remove the email address, the email notification will not be sent.
 
@@ -48,7 +48,7 @@ If you modify the default email address or phone number, the emergency notificat
 
 == Copying contact info ==
 
-Copy contact info from the system contacts database when adding a contact to the emergency contacts. When adding a contact, the user can select one of the phone numbers or email addresses for sending notifications.
+Copy contact info from the system contacts database when adding a contact to the emergency contacts. When adding a contact, the user can select one of the mobile phone numbers or email addresses for sending notifications.
 
 If the information in the contacts database was not correct when the contact was added to the emergency contacts, the emergency notifications may be incorrect. If you later fix the information in the contact database, the emergency information will stay incorrect.
 
@@ -74,3 +74,25 @@ create table contacts (
     email text
 );
 }}}
+
+== Selecting mobile phone number ==
+
+When selecting mobile phone number, choose the first number using the label "mobile".
+
+If no number is labeled "mobile", select the first number in the list. It is likely that a user added another phone with the default label (e.g. work) instead of selecting mobile.
+
+When displaying list of phones, show the mobile numbers, then other numbers.
+
+To make the selection more clear, include the label in the item text:
+{{{
+Select mobile phone number:
+  ----------------------
+ |  (054) 1234567  MOBILE |
+ |  (052) 1237890  MOBILE |
+ |  (034) 456789    HOME   |
+  ----------------------
+}}}
+
+A simpler solution is to choose and show only numbers labeled "mobile". The user can fix the label in the contacts application. If not mobile number defined, display "No mobile phone number".
+
+See also http://code.google.com/p/iamnotok/issues/detail?id=7
