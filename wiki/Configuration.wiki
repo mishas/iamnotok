@@ -25,3 +25,52 @@ These options let the user customize the application for her needs:
  * Notification Interval - when in emergency state, every Notification Interval seconds the system will send notifications to all contacts.
 
  * Cancelation Delay - after triggering an emergency, the system waits Cancelation Delay seconds before entering emergency state. If the user cancel the emergency within Cancelation Delay seconds, no notifications are sent.
+
+= Contact Information =
+
+For displaying configuration and sending notification, the system needs this info for each contact:
+
+ * name - contact name for displaying in the contact list.
+ * phone - optional phone number for sending SMS message
+ * email - optional email address for sending email notification
+
+There are few solutions for keeping contacts information.
+
+== Use system contacts database ==
+
+Keep a contact id and notifications preferences (send sms, send email), and get the information from the system contacts database when sending a notification, using the default phone number and email address.
+
+Modifying the system contacts database may invalidate the emergency configuration. For example, if you added an email notification to one contact, and then you remove the email address, the email notification will not be sent.
+
+Modifying the system contacts database may fix the emergency configuration. For example, if added an email notification, and the email address was wrong, and later you fixed the contact email address, the emergency notification will be fixed automatically.
+
+If you modify the default email address or phone number, the emergency notification is modified silently.
+
+== Copying contact info ==
+
+Copy contact info from the system contacts database when adding a contact to the emergency contacts. When adding a contact, the user can select one of the phone numbers or email addresses for sending notifications.
+
+If the information in the contacts database was not correct when the contact was added to the emergency contacts, the emergency notifications may be incorrect. If you later fix the information in the contact database, the emergency information will stay incorrect.
+
+If you delete a contact or contact phone or email, from the system contacts database, the emergency notification will not be effected.
+
+When displaying the contacts configuration, we can display the values select when the contact was added, and use the information from the system database for modifying the current selection.
+
+== Copying and validating ==
+
+Keep the selected values when adding a contacts, and validate them with the system contacts database when using the contact information. The system will validate and update the emergency contacts database when displaying contacts information or when sending notifications.
+
+If the selected value (e.g. phone number) does not exists in the system contacts database, replace it with the default value in the system contacts database. If no value exists in the system database, keep the current value.
+
+In this case a wrong value in the emergency contacts database will be will be automatically replaced by correct value from the system contacts database, assuming that the system contacts database is more correct then the emergency database.
+
+The schema for this solution:
+{{{
+create table contacts (
+    id integer primary key autoincrement,
+    contact_id text unique not null,
+    name text not null,
+    phone text,
+    email text
+);
+}}}
