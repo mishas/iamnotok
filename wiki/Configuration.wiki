@@ -86,7 +86,7 @@ When displaying list of phones, show the mobile numbers, then other numbers.
 To make the selection more clear, include the label in the item text:
 {{{
 Select mobile phone number:
--------------------------                                                                                                                                                   
+-------------------------
 | (054) 1234567  MOBILE |
 | (052) 1237890  MOBILE |
 | (034) 456789   HOME   |
