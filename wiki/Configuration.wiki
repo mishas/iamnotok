@@ -93,6 +93,6 @@ Select mobile phone number:
 -------------------------
 }}}
 
-A simpler solution is to choose and show only numbers labeled "mobile". The user can fix the label in the contacts application. If not mobile number defined, display "No mobile phone number".
+A simpler solution is to choose and show only numbers labeled "mobile". The user can fix the label in the contacts application. If no mobile number defined, display "No mobile phone number".
 
 See also http://code.google.com/p/iamnotok/issues/detail?id=7
