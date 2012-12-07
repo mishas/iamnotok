@@ -96,3 +96,5 @@ Select mobile phone number:
 A simpler solution is to choose and show only numbers labeled "mobile". The user can fix the label in the contacts application. If no mobile number defined, display "No mobile phone number".
 
 See also http://code.google.com/p/iamnotok/issues/detail?id=7
+
+Testing contacts application in version 4.2, if the user does not select a label, the first number is MOBILE, the second is HOME, third is WORK, and all other numbers are OTHER. So we may show only numbers labeled as HOME, WORK or OTHER, assuming that the user did not chose these labels. Other labels (e.g. FAX or PAGER) are likely to be chosen and are not mobile. Of course this may break easily if these labels are localized :-)
