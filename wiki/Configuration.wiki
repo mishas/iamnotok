@@ -44,7 +44,7 @@ Here is the steps needed to add a contact:
  # Find and tap contact name in the system contacts activity
  # Display ContactNotifications activity, selecting the first mobile phone and email address, assuming that they are the most important ones.
 {{{
-Contact notifications:
+Foo Bar notifications:
                                                                                                                                                                             
 SMS notifications:
  [x] 0545001234         MOBILE
