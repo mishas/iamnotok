@@ -8,7 +8,7 @@ This page describe configuration process of a future version of the "I'm Not OK"
 
 These options are required to make the system operational.
  
- * Contacts - one or more contacts records, containing either a phone number for sending SMS notification, and/or an email address for sending email notification.
+ * Contacts - one or more contacts records, containing one or more phone number for sending SMS notifications, and/or one or more email address for sending email notifications.
 
 = Optional configuration =
 
@@ -31,32 +31,12 @@ These options let the user customize the application for her needs:
 For displaying configuration and sending notification, the system needs this info for each contact:
 
  * name - contact name for displaying in the contact list.
- * phone - optional phone number for sending SMS message
- * email - optional email address for sending email notification
+ * phones - optional phone numbers for sending SMS notifications
+ * emails - optional email addresses for sending email notifications
 
 There are few solutions for keeping contacts information.
 
-== Use system contacts database ==
-
-Keep a contact id and notifications preferences (send sms, send email), and get the information from the system contacts database when sending a notification, using the first mobile phone number and first email address.
-
-Modifying the system contacts database may invalidate the emergency configuration. For example, if you added an email notification to one contact, and then you remove the email address, the email notification will not be sent.
-
-Modifying the system contacts database may fix the emergency configuration. For example, if added an email notification, and the email address was wrong, and later you fixed the contact email address, the emergency notification will be fixed automatically.
-
-If you modify the default email address or phone number, the emergency notification is modified silently.
-
-== Copying contact info ==
-
-Copy contact info from the system contacts database when adding a contact to the emergency contacts. When adding a contact, the user can select one of the mobile phone numbers or email addresses for sending notifications.
-
-If the information in the contacts database was not correct when the contact was added to the emergency contacts, the emergency notifications may be incorrect. If you later fix the information in the contact database, the emergency information will stay incorrect.
-
-If you delete a contact or contact phone or email, from the system contacts database, the emergency notification will not be effected.
-
-When displaying the contacts configuration, we can display the values select when the contact was added, and use the information from the system database for modifying the current selection.
-
-== Copying and validating ==
+== Managing contact information ==
 
 Keep the selected values when adding a contacts, and validate them with the system contacts database when using the contact information. The system will validate and update the emergency contacts database when displaying contacts information or when sending notifications.
 
@@ -66,13 +46,19 @@ In this case a wrong value in the emergency contacts database will be will be au
 
 The schema for this solution:
 {{{
-create table contacts (
-    id integer primary key autoincrement,
-    contact_id text unique not null,
+create table contact (
+    id text unique primary key not null, /* Id used by the system contacts database */
     name text not null,
-    phone text,
-    email text
 );
+
+create table notification (
+    id integer primary key not null autoincrement, /* For keeping insertion order */ 
+    contact_id text not null references contact (id),
+    type text not null, /* "email" or "sms" */
+    target text not null /* "0541231234" or "user@host.com" */
+);
+
+create unique index id_target on notifications (contact_id, type, target); /* Only one notification per phone/email */
 }}}
 
 == Selecting mobile phone number ==
