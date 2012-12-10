@@ -36,6 +36,32 @@ For displaying configuration and sending notification, the system needs this inf
 
 There are few solutions for keeping contacts information.
 
+== Adding contact notifications ==
+
+Here is the steps needed to add a contact:
+
+ # Tap "Add contact" in the main activity
+ # Find and tap contact name in the system contacts activity
+ # Display ContactNotifications activity, selecting the first mobile phone and email address, assuming that they are the most important ones.
+{{{
+Contact notifications:
+                                                                                                                                                                            
+SMS notifications:
+ [x] 0545001234         MOBILE
+ [ ] 0545003456         MOBILE
+ [ ] 0545006789         MOBILE
+
+Email notifictions:
+ [x] foo@bar.com        WORK
+ [ ] foo123@gmail.com   OTHER
+
+[Cancel] [OK]
+}}}
+
+Notes: should we allow adding a contact without any notifications? For example, we can enable the OK button if at least one item is selected.
+
+The same activity can be used to edit contact details later, and it is mostly implemented today (see ContactsDetailsActivity).
+
 == Managing contact information ==
 
 Keep the selected values when adding a contacts, and validate them with the system contacts database when using the contact information. The system will validate and update the emergency contacts database when displaying contacts information or when sending notifications.
