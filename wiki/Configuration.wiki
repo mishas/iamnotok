@@ -34,8 +34,6 @@ For displaying configuration and sending notification, the system needs this inf
  * phones - optional phone numbers for sending SMS notifications
  * emails - optional email addresses for sending email notifications
 
-There are few solutions for keeping contacts information.
-
 == Adding contact notifications ==
 
 Here is the steps needed to add a contact:
