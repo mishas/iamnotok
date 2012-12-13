@@ -73,18 +73,19 @@ In this case a wrong value in the emergency contacts database will be will be au
 The schema for this solution:
 {{{
 create table contact (
-    id text unique primary key not null, /* Id used by the system contacts database */
+    id integer primary key not null autoincrement,
+    system_id text unique not null, /* Id used by the system contacts database */
     name text not null,
 );
 
 create table notification (
     id integer primary key not null autoincrement, /* For keeping insertion order */ 
     contact_id text not null references contact (id),
-    type text not null, /* "email" or "sms" */
+    type text not null, /* "EMAIL" or "SMS" */
     target text not null /* "0541231234" or "user@host.com" */
 );
 
-create unique index id_target on notifications (contact_id, type, target); /* Only one notification per phone/email */
+create unique index id_target on notifications (contact_id, type, target); /* Only one notification per same phone/email */
 }}}
 
 == Selecting mobile phone number ==
