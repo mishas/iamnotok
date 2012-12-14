@@ -30,6 +30,8 @@ These options let the user customize the application for her needs:
 
 For displaying configuration and sending notification, the system needs this info for each contact:
 
+ * id - used to find contacts in the database and keep contact insertion order.
+ * system_id - contact id in the system contacts database
  * name - contact name for displaying in the contact list.
  * phones - optional phone numbers for sending SMS notifications
  * emails - optional email addresses for sending email notifications
